@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>단타중타</title>
+<meta name="theme-color" content="#111318">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="단타중타">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#111318; --card:#1a1d24; --line:#2a2e38; --text:#eceef2; --sub:#9097a5;
+  --up:#ff5a5f; --down:#4e7cff; --buy:#4e7cff; --tgt:#ff5a5f; --stop:#9097a5; --accent:#f5a524;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Malgun Gothic",sans-serif}
+body{padding:env(safe-area-inset-top) 16px calc(76px + env(safe-area-inset-bottom))}
+header{padding:18px 0 10px}
+h1{font-size:22px;margin:0;letter-spacing:-.5px}
+.meta{color:var(--sub);font-size:13px;margin-top:4px}
+.seg{display:flex;background:var(--card);border-radius:12px;padding:4px;margin:12px 0 14px}
+.seg button{flex:1;border:0;background:none;color:var(--sub);font:inherit;font-size:15px;font-weight:600;padding:10px 0;border-radius:9px}
+.seg button.on{background:#2a2f3a;color:var(--text)}
+.card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:14px}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.name{font-size:19px;font-weight:700;letter-spacing:-.4px}
+.code{color:var(--sub);font-size:12px;margin-top:2px}
+.chip{font-size:12px;font-weight:600;padding:4px 9px;border-radius:99px;background:#2a2f3a;color:var(--sub);white-space:nowrap}
+.chip.buy{background:rgba(78,124,255,.18);color:var(--buy)}
+.chip.tgt{background:rgba(255,90,95,.18);color:var(--tgt)}
+.chip.stop{background:rgba(144,151,165,.2);color:var(--text)}
+.now{font-size:14px;color:var(--sub);margin:10px 0 12px}
+.now b{color:var(--text);font-size:17px}
+.prices{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.p{background:#14161c;border-radius:12px;padding:10px 8px;text-align:center}
+.p .l{font-size:12px;color:var(--sub)}
+.p .v{font-size:15px;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums}
+.p .d{font-size:12px;margin-top:2px;font-variant-numeric:tabular-nums}
+.p.buy .v{color:var(--buy)} .p.tgt .v,.p.tgt .d{color:var(--tgt)} .p.stop .d{color:var(--down)}
+canvas{width:100%;height:190px;display:block;margin:14px 0 6px}
+.legend{display:flex;gap:12px;font-size:11px;color:var(--sub)}
+.legend i{display:inline-block;width:10px;height:2px;vertical-align:middle;margin-right:4px}
+.why{margin:12px 0 0;padding:0;list-style:none;font-size:14px;line-height:1.55}
+.why li:before{content:"✓ ";color:var(--accent)}
+.val{font-size:12px;color:var(--sub);margin-top:8px}
+.empty{color:var(--sub);text-align:center;padding:40px 10px;line-height:1.6}
+.sec{font-size:15px;font-weight:700;margin:22px 0 10px}
+.row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px}
+.row:last-child{border:0}
+.row .s{color:var(--sub);font-size:12px}
+.btn{display:block;width:100%;text-align:center;border:0;border-radius:12px;padding:14px;font:inherit;font-weight:700;font-size:15px;text-decoration:none;margin-top:10px}
+.btn.pri{background:var(--accent);color:#111}
+.btn.sec2{background:#2a2f3a;color:var(--text)}
+.topic{font-family:ui-monospace,Menlo,monospace;background:#14161c;border-radius:10px;padding:12px;font-size:15px;text-align:center;user-select:all;word-break:break-all}
+.steps{font-size:14px;line-height:1.7;color:var(--text);padding-left:20px;margin:8px 0}
+.warn{font-size:12px;color:var(--sub);line-height:1.6;margin-top:18px}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:rgba(17,19,24,.94);backdrop-filter:blur(10px);
+  border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;border:0;color:var(--sub);font:inherit;font-size:11px;padding:9px 0 8px}
+nav button span{display:block;font-size:20px;margin-bottom:2px}
+nav button.on{color:var(--text)}
+.page{display:none}.page.on{display:block}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#2a2f3a;padding:10px 16px;border-radius:99px;font-size:13px;opacity:0;transition:.3s;pointer-events:none}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="page on" id="p-home">
+  <header>
+    <h1>오늘의 추천</h1>
+    <div class="meta" id="meta">불러오는 중…</div>
+  </header>
+  <div class="seg" id="seg">
+    <button class="on" data-s="단타">⚡ 단타 1~5일</button>
+    <button data-s="중타">🌱 중타 2~6주</button>
+  </div>
+  <div id="list"></div>
+  <div class="warn">⚠️ 과거 차트·지표로 만든 참고용 신호이며 수익을 보장하지 않아요. 투자 판단과 책임은 본인에게 있어요. 손절가는 꼭 지키세요.</div>
+</div>
+
+<div class="page" id="p-hist">
+  <header><h1>지난 추천</h1><div class="meta">최근 추천 기록이에요</div></header>
+  <div class="card" id="hist"></div>
+</div>
+
+<div class="page" id="p-set">
+  <header><h1>설정</h1></header>
+
+  <div class="card">
+    <div class="sec" style="margin-top:0">📱 푸시 알림 받기</div>
+    <ol class="steps">
+      <li>스토어에서 <b>ntfy</b> 앱 설치</li>
+      <li>아래 이름을 복사</li>
+      <li>ntfy 앱에서 <b>+</b> 누르고 붙여넣기 → 구독</li>
+    </ol>
+    <div class="topic" id="topic">-</div>
+    <button class="btn pri" id="copy">이름 복사</button>
+    <a class="btn sec2" href="https://ntfy.sh/app" target="_blank" rel="noopener">ntfy 앱 받기</a>
+  </div>
+
+  <div class="card">
+    <div class="sec" style="margin-top:0">🔄 지금 바로 분석하기</div>
+    <div class="steps" style="padding:0">평일 08:37·15:37에 자동으로 분석해요. 지금 바로 하려면 아래 버튼 → <b>Run workflow</b> → 초록 <b>Run workflow</b>를 누르세요. 3~5분 뒤 알림이 와요.</div>
+    <a class="btn sec2" id="runlink" target="_blank" rel="noopener">GitHub에서 실행</a>
+  </div>
+
+  <div class="card">
+    <div class="sec" style="margin-top:0">📲 앱으로 설치</div>
+    <div class="steps" style="padding:0">
+      <b>안드로이드(크롬)</b>: ⋮ 메뉴 → <b>홈 화면에 추가</b> / <b>앱 설치</b><br>
+      <b>아이폰(사파리)</b>: 공유 버튼 → <b>홈 화면에 추가</b>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sec" style="margin-top:0">📐 추천 기준</div>
+    <div class="steps" style="padding:0;font-size:13px;color:var(--sub)">
+      <b style="color:var(--text)">단타</b> 상승추세에서 거래량이 평소 1.5배 이상 터지고 MACD가 살아나는 종목. 매수가는 5일선 근처, 목표는 하루 평균 변동폭(ATR)×1.5, 손절은 ATR×1.<br><br>
+      <b style="color:var(--text)">중타</b> 20·60·120일선 정배열 상승추세에서 20일선까지 눌린 종목. PER·PBR이 낮으면 가점, 적자는 감점. 목표는 ATR×3 또는 60일 고점(최대 +20%), 손절은 60일선 아래.<br><br>
+      과열(RSI 72↑), 급등(하루 +12%↑), 우선주·스팩·ETF는 제외해요.
+    </div>
+  </div>
+</div>
+
+<nav>
+  <button class="on" data-p="home"><span>📈</span>추천</button>
+  <button data-p="hist"><span>🗂️</span>기록</button>
+  <button data-p="set"><span>⚙️</span>설정</button>
+</nav>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const won = n => n == null ? "-" : Math.round(n).toLocaleString("ko-KR");
+const pct = (a, b) => ((a / b - 1) * 100);
+let DATA = null, STYLE = "단타";
+
+function toast(t){ const e=$("#toast"); e.textContent=t; e.classList.add("on"); setTimeout(()=>e.classList.remove("on"),1800); }
+
+// 저장소 주소 알아내기 (아이디.github.io/stockpick)
+const owner = location.hostname.split(".")[0];
+const repo = location.pathname.split("/").filter(Boolean)[0] || "stockpick";
+$("#runlink").href = `https://github.com/${owner}/${repo}/actions/workflows/stockpick.yml`;
+
+async function getJSON(u){
+  const r = await fetch(u + "?t=" + Date.now(), {cache:"no-store"});
+  if(!r.ok) throw new Error(r.status);
+  return r.json();
+}
+
+function chipFor(p){
+  const s = p.status || "대기";
+  const cls = s.includes("매수") ? "buy" : s.includes("목표") ? "tgt" : s.includes("손절") ? "stop" : "";
+  return `<span class="chip ${cls}">${s}</span>`;
+}
+
+function card(p, i){
+  const now = p.now ?? p.close;
+  const up = pct(p.target, p.buy), dn = pct(p.stop, p.buy);
+  const val = (p.per != null && p.per > 0) ? `PER ${p.per.toFixed(1)}` + (p.pbr != null ? ` · PBR ${p.pbr.toFixed(2)}` : "") :
+              (p.per != null && p.per <= 0) ? "적자 기업" : "";
+  return `<div class="card">
+    <div class="top"><div><div class="name">${p.name}</div><div class="code">${p.code} · ${p.market}</div></div>${chipFor(p)}</div>
+    <div class="now">현재가 <b>${won(now)}원</b> · 매수가까지 ${pct(p.buy, now).toFixed(1)}%</div>
+    <div class="prices">
+      <div class="p buy"><div class="l">매수가</div><div class="v">${won(p.buy)}</div><div class="d">&nbsp;</div></div>
+      <div class="p tgt"><div class="l">목표 매도가</div><div class="v">${won(p.target)}</div><div class="d">+${up.toFixed(1)}%</div></div>
+      <div class="p stop"><div class="l">손절가</div><div class="v">${won(p.stop)}</div><div class="d">${dn.toFixed(1)}%</div></div>
+    </div>
+    <canvas id="c${i}"></canvas>
+    <div class="legend"><span><i style="background:#f5a524"></i>5일선</span><span><i style="background:#2fc4a6"></i>20일선</span><span><i style="background:#a77bff"></i>60일선</span></div>
+    <ul class="why">${(p.reasons||[]).map(r=>`<li>${r}</li>`).join("")}</ul>
+    ${val ? `<div class="val">${val}</div>` : ""}
+  </div>`;
+}
+
+function draw(cv, p){
+  const rows = p.chart || []; if(!rows.length) return;
+  const dpr = devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
+  cv.width = W*dpr; cv.height = H*dpr;
+  const g = cv.getContext("2d"); g.scale(dpr,dpr);
+  const padR = 52;
+  let lo = Math.min(...rows.map(r=>r[3]), p.stop), hi = Math.max(...rows.map(r=>r[2]), p.target);
+  const m = (hi-lo)*0.06; lo -= m; hi += m;
+  const y = v => H - (v-lo)/(hi-lo)*H;
+  const n = rows.length, step = (W-padR)/n, bw = Math.max(1.5, step*0.6);
+  // 가격선
+  [[p.target,"#ff5a5f","목표"],[p.buy,"#4e7cff","매수"],[p.stop,"#9097a5","손절"]].forEach(([v,c,t])=>{
+    g.strokeStyle=c; g.setLineDash([4,4]); g.lineWidth=1;
+    g.beginPath(); g.moveTo(0,y(v)); g.lineTo(W-padR,y(v)); g.stroke(); g.setLineDash([]);
+    g.fillStyle=c; g.font="11px sans-serif"; g.fillText(t, W-padR+4, y(v)+4);
+  });
+  // 캔들
+  rows.forEach((r,i)=>{
+    const [,o,h,l,c] = r, x = i*step + step/2, col = c>=o ? "#ff5a5f" : "#4e7cff";
+    g.strokeStyle=col; g.fillStyle=col; g.lineWidth=1;
+    g.beginPath(); g.moveTo(x,y(h)); g.lineTo(x,y(l)); g.stroke();
+    const t=y(Math.max(o,c)), b=y(Math.min(o,c)); g.fillRect(x-bw/2, t, bw, Math.max(1,b-t));
+  });
+  // 이동평균
+  [[5,"#f5a524"],[6,"#2fc4a6"],[7,"#a77bff"]].forEach(([k,c])=>{
+    g.strokeStyle=c; g.lineWidth=1.3; g.beginPath(); let st=false;
+    rows.forEach((r,i)=>{ if(r[k]==null) return; const x=i*step+step/2; st ? g.lineTo(x,y(r[k])) : (g.moveTo(x,y(r[k])), st=true); });
+    g.stroke();
+  });
+}
+
+function render(){
+  if(!DATA){ return; }
+  const picks = DATA.picks.filter(p=>p.style===STYLE);
+  $("#list").innerHTML = picks.length ? picks.map(card).join("") :
+    `<div class="empty">이번 분석에선 조건에 맞는 ${STYLE} 종목이 없어요.<br>무리하게 매매하지 않는 날도 필요해요.</div>`;
+  picks.forEach((p,i)=>draw($("#c"+i), p));
+}
+
+async function load(){
+  try{
+    DATA = await getJSON("data/latest.json");
+    $("#meta").textContent = `마지막 분석 ${DATA.created}` + (DATA.checked ? ` · 가격확인 ${DATA.checked}` : "");
+    render();
+  }catch(e){
+    $("#meta").textContent = "아직 분석 결과가 없어요";
+    $("#list").innerHTML = `<div class="empty">첫 분석을 기다리는 중이에요.<br>설정 탭 → <b>지금 바로 분석하기</b>로 바로 실행할 수 있어요.</div>`;
+  }
+  try{
+    const h = await getJSON("data/history.json");
+    $("#hist").innerHTML = h.length ? h.map(x=>`<div class="row"><div><div>${x.name} <span class="s">${x.style}</span></div><div class="s">${x.created}</div></div>
+      <div style="text-align:right"><div>${won(x.buy)} → ${won(x.target)}</div><div class="s">손절 ${won(x.stop)}</div></div></div>`).join("")
+      : `<div class="empty">기록이 없어요</div>`;
+  }catch(e){ $("#hist").innerHTML = `<div class="empty">기록이 없어요</div>`; }
+  try{
+    const a = await getJSON("data/app.json");
+    $("#topic").textContent = a.ntfy_topic;
+  }catch(e){}
+}
+
+$("#seg").onclick = e => { const b=e.target.closest("button"); if(!b) return;
+  document.querySelectorAll("#seg button").forEach(x=>x.classList.toggle("on", x===b)); STYLE=b.dataset.s; render(); };
+document.querySelector("nav").onclick = e => { const b=e.target.closest("button"); if(!b) return;
+  document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on", x===b));
+  document.querySelectorAll(".page").forEach(x=>x.classList.toggle("on", x.id==="p-"+b.dataset.p));
+  scrollTo(0,0); if(b.dataset.p==="home") render(); };
+$("#copy").onclick = async () => { try{ await navigator.clipboard.writeText($("#topic").textContent); toast("복사했어요"); }catch(e){ toast("길게 눌러 복사하세요"); } };
+addEventListener("resize", render);
+document.addEventListener("visibilitychange", () => { if(!document.hidden) load(); });
+
+if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+load();
+</script>
+</body>
+</html>

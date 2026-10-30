@@ -1,0 +1,5 @@
+pandas>=2.0
+numpy>=1.26
+requests>=2.31
+finance-datareader>=0.9.90
+pykrx>=1.0.45

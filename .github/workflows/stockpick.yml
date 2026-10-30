@@ -1,0 +1,58 @@
+name: 주식 추천
+
+on:
+  schedule:
+    - cron: "37 23 * * 0-4"     # 평일 08:37 (한국시간) 장 시작 전 분석
+    - cron: "37 6 * * 1-5"      # 평일 15:37 (한국시간) 장 마감 후 분석
+    - cron: "*/20 0-6 * * 1-5"  # 평일 09:00~15:59 20분마다 가격 감시
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "실행할 작업"
+        type: choice
+        options: [analyze, watch, test]
+        default: analyze
+
+permissions:
+  contents: write
+
+concurrency:
+  group: stockpick
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+
+      - name: 작업 결정
+        id: mode
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "mode=${{ inputs.mode }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.schedule }}" = "*/20 0-6 * * 1-5" ]; then
+            echo "mode=watch" >> $GITHUB_OUTPUT
+          else
+            echo "mode=analyze" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 실행
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: python run.py ${{ steps.mode.outputs.mode }}
+
+      - name: 결과 저장
+        run: |
+          git config user.name "stockpick-bot"
+          git config user.email "stockpick-bot@users.noreply.github.com"
+          git add docs/data
+          git diff --cached --quiet && exit 0
+          git commit -m "추천 결과 업데이트 $(TZ=Asia/Seoul date '+%m-%d %H:%M')"
+          git pull --rebase -X theirs && git push
