@@ -14,6 +14,7 @@ import sys
 import numpy as np
 import requests
 
+import engine
 from engine import scan, load_prices, add_indicators
 
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -92,7 +93,7 @@ def analyze():
         d["status"] = "대기"          # 대기 → 매수가 도달 → 목표가 도달 / 손절
         d["alerted"] = []
         picks.append(d)
-    data = {"created": dt.datetime.now(KST).strftime("%Y-%m-%d %H:%M"), "picks": picks}
+    data = {"created": dt.datetime.now(KST).strftime("%Y-%m-%d %H:%M"), "picks": picks, "source": engine.LAST_SOURCE}
     save(data)
 
     # 지난 추천 기록 (최근 60건)

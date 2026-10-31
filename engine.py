@@ -293,6 +293,23 @@ def load_prices(code: str, days: int = 260) -> pd.DataFrame:
     return parse_naver_fchart(r.text)
 
 
+def naver_value(code: str):
+    """종목 하나의 PER/PBR (네이버 모바일). 실패하면 (None, None)"""
+    try:
+        r = requests.get(f"https://m.stock.naver.com/api/stock/{code}/integration", headers=UA, timeout=10)
+        per = pbr = None
+        for it in r.json().get("totalInfos", []):
+            k = str(it.get("code", it.get("key", ""))).lower()
+            v = _num(str(it.get("value", "")).replace("배", ""))
+            if k == "per":
+                per = None if np.isnan(v) else v
+            elif k == "pbr":
+                pbr = None if np.isnan(v) else v
+        return per, pbr
+    except Exception:
+        return None, None
+
+
 def load_fundamentals() -> pd.DataFrame | None:
     """PER/PBR. pykrx 실패 시 네이버 시가총액 페이지의 PER 사용, 그것도 실패하면 None"""
     try:
@@ -318,11 +335,16 @@ def load_fundamentals() -> pd.DataFrame | None:
 # ─────────────────────────────────────────────
 # 7. 전체 스캔 → 단타·중타 각 1~2개 추천
 # ─────────────────────────────────────────────
+LAST_SOURCE = {}
+
+
 def scan(top_n: int = 300, picks_each: int = 2, progress=None,
          price_loader=None, universe=None, fundamentals="auto"):
     price_loader = price_loader or load_prices
     uni = universe if universe is not None else load_universe(top_n)
     fund = load_fundamentals() if isinstance(fundamentals, str) else fundamentals
+    global LAST_SOURCE
+    LAST_SOURCE = {"fundamentals": None if fund is None else len(fund), "universe": len(uni)}
 
     shorts, mids = [], []
     total = len(uni)
@@ -348,6 +370,10 @@ def scan(top_n: int = 300, picks_each: int = 2, progress=None,
                 s, b, tg, st, rs = r
                 shorts.append(Pick("단타", row["Code"], row["Name"], row["Market"], int(last.Close),
                                    b, tg, st, round(s, 1), rs, per, pbr, asof))
+            if per is None and score_mid(d, 5, 1):          # 가치 점수가 필요한 후보만 개별 조회
+                per, pbr = naver_value(row["Code"])
+                if per is None:                              # 조회 실패 시 가치 점수 없이
+                    per = pbr = None
             r = score_mid(d, per, pbr)
             if r:
                 s, b, tg, st, rs = r
